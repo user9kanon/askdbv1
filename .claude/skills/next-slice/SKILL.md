@@ -24,5 +24,6 @@ tool quirk, a convention the user asked for, a mistake not to repeat): save it t
 auto memory.
 - Nothing worth recording is a valid outcome. Do not write filler.
 7. Tick the slice in docs/PLAN.md. Commit everything as `slice N: <goal>`.
-8. Stop. Do not start the next slice. Reply with three lines: what changed, what
+8. log the implementation summary to a file names slice-n-log.txt in the docs folder, where n is the slice number.
+9. Stop. Do not start the next slice. Reply with three lines: what changed, what
 was verified, any note recorded.

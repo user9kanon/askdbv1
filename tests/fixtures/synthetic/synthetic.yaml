@@ -1,0 +1,60 @@
+# Synthetic config: no metrics, scoping on accounts.territory, multi-hop chain.
+name: synthetic_retail
+display_name: Synthetic Retail
+path: ${SYNTHETIC_DB_PATH}
+
+data_coverage:
+  mode: live
+  expected_cadence: daily
+
+description: |
+  A small retail order book. One row per account, product, order and order line.
+  order_items.order_id -> orders.order_id; orders.account_id -> accounts.account_id.
+
+tables:
+  - name: accounts
+    description: Customer accounts.
+    columns:
+      - { name: account_id, type: INTEGER, primary_key: true }
+      - { name: account_name, type: TEXT, display_name: true }
+      - { name: territory, type: TEXT, description: "Sales territory" }
+      - { name: contact_email, type: TEXT, sensitive: contact }
+
+  - name: products
+    description: Product catalogue.
+    columns:
+      - { name: product_id, type: INTEGER, primary_key: true }
+      - { name: sku, type: TEXT }
+      - { name: unit_price, type: REAL }
+
+  - name: orders
+    description: One row per order.
+    columns:
+      - { name: order_id, type: INTEGER, primary_key: true }
+      - { name: account_id, type: INTEGER, references: accounts.account_id }
+      - { name: ordered_at, type: DATETIME }
+
+  - name: order_items
+    description: One row per order line.
+    columns:
+      - { name: item_id, type: INTEGER, primary_key: true }
+      - { name: order_id, type: INTEGER, references: orders.order_id }
+      - { name: product_id, type: INTEGER, references: products.product_id }
+      - { name: quantity, type: INTEGER }
+
+access:
+  row_scope:
+    table: accounts
+    column: territory
+    group_label: Territory
+    groups:
+      Mainland: [North, South]
+      Coast: [West]
+    scoped_tables:
+      - { table: orders, via: account_id }
+      - { table: order_items, via: order_id }
+    reference_tables: [products]
+  sensitive_categories:
+    contact:
+      label: Contact details
+      description: Account contact e-mail addresses.

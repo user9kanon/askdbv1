@@ -1,11 +1,12 @@
 # AskDB v1 — Plan
 
-- [ ] **Slice 1 — Project skeleton + strict config loading** (§4.2, §11.4)
+- [x] **Slice 1 — Project skeleton + strict config loading** (§4.2, §11.4)
   - Files: `pyproject.toml`, `src/askdb/__init__.py`, `src/askdb/cli.py`, `src/askdb/config/{models,loader,validate}.py`, `src/askdb/evalset.py`, `tests/conftest.py`, `tests/unit/test_config_*.py`, `tests/fixtures/synthetic/`, `docs/PLAN.md`
   - Verify: `uv run pytest tests/unit` covers the CloudMetrics config passing, the synthetic multi-hop config passing, and one failing case per rule (unknown key, typo in `access`, missing column, cycle, bad `via`, broken metric SQL, unset env var). `uv run askdb validate-config` exits 0 with the dev env. Ruff is clean.
 
 - [ ] **Slice 2 — Scope builder + read-only executor** (§6.2, §7.2)
   - Files: `src/askdb/scopes/{builder,ids}.py`, `src/askdb/executor.py`, `src/askdb/ddl.py`, `tests/redteam/test_scope_integrity.py`, `tests/redteam/test_executor_attacks.py`, `tests/unit/test_scope_builder.py`, `tests/unit/test_ddl.py`
+  - Note (slice 1): open the source DB only via `askdb.config.validate.open_source_readonly`. The synthetic fixture (`tests/fixtures/synthetic/`) already has an orphan order (NULL `account_id`), an unmapped territory (`Isles`) and an unlisted column (`accounts.internal_note`) for the integrity tests.
   - Verify: red-team tests inspect scope files directly (only in-scope rows, no ungranted sensitive columns, multi-hop on the synthetic DB). Executor attacks are all denied: ATTACH, PRAGMA, writes and DDL, multiple statements, `load_extension`, `date('now')`, and a runaway recursive CTE hitting the timeout. The DDL for a restricted scope never contains a dropped column name.
 
 - [ ] **Slice 3 — App DB, auth, grants, Ask page shell** (§2, §3.4, §7.1, §13)
@@ -14,6 +15,7 @@
 
 - [ ] **Slice 4 — Certified metric, explicit period, answer card** (§5.1, §5.4, §6.1, §6.3, §8.2)
   - Files: `src/askdb/periods.py`, `src/askdb/llm/{client,prompts,schema}.py`, `src/askdb/pipeline.py`, `src/askdb/metrics.py`, `src/askdb/sanity.py`, `src/askdb/format.py`, `src/askdb/templates/answer_card.html`, `tests/unit/test_periods.py`, `tests/unit/test_filters_substitution.py`, `tests/unit/test_metrics_eval_agreement.py`, `tests/unit/test_pipeline_certified.py`
+  - Note (slice 1): config validation already expands `{{filters}}` as ` AND <expr> = :f_<name>` (`validate._run_metric_sql`); reuse one substitution function for the pipeline rather than a second copy.
   - Verify: unit tests cover period edges and fiscal start, binding-only `{{filters}}` substitution, and metric/eval agreement (§4.4 list). A fake-LLM pipeline test checks that EMEA and All users get different numbers with correct scope labels. A manual browser check uses the real API.
 
 - [ ] **Slice 5 — Clarify and decline** (§5.1–5.3, §5.5, §8.3)
